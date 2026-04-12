@@ -117,20 +117,44 @@ module tb_dendrite_top;
         resp_ready = 1'b0;
     endtask
 
-    // ── Direct VRF write (through DUT hierarchy) ────────────
+    // ── Direct VRF write (banked VRF inside each compute tile) ─
+    localparam int VLEN_BANK = VLEN / 4;
     task automatic write_vreg(input int idx, input [VLEN-1:0] data);
         @(posedge clk);
-        force dut.u_vrf.wr_en = 1;
-        force dut.u_vrf.wr_addr = idx[$clog2(NREGS)-1:0];
-        force dut.u_vrf.wr_data = data;
+        force dut.g_core[0].u_core.u_vrf.wr_en   = 1;
+        force dut.g_core[0].u_core.u_vrf.wr_addr = idx[$clog2(NREGS)-1:0];
+        force dut.g_core[0].u_core.u_vrf.wr_data = data[0*VLEN_BANK +: VLEN_BANK];
+        force dut.g_core[1].u_core.u_vrf.wr_en   = 1;
+        force dut.g_core[1].u_core.u_vrf.wr_addr = idx[$clog2(NREGS)-1:0];
+        force dut.g_core[1].u_core.u_vrf.wr_data = data[1*VLEN_BANK +: VLEN_BANK];
+        force dut.g_core[2].u_core.u_vrf.wr_en   = 1;
+        force dut.g_core[2].u_core.u_vrf.wr_addr = idx[$clog2(NREGS)-1:0];
+        force dut.g_core[2].u_core.u_vrf.wr_data = data[2*VLEN_BANK +: VLEN_BANK];
+        force dut.g_core[3].u_core.u_vrf.wr_en   = 1;
+        force dut.g_core[3].u_core.u_vrf.wr_addr = idx[$clog2(NREGS)-1:0];
+        force dut.g_core[3].u_core.u_vrf.wr_data = data[3*VLEN_BANK +: VLEN_BANK];
         @(posedge clk);
-        release dut.u_vrf.wr_en;
-        release dut.u_vrf.wr_addr;
-        release dut.u_vrf.wr_data;
+        release dut.g_core[0].u_core.u_vrf.wr_en;
+        release dut.g_core[0].u_core.u_vrf.wr_addr;
+        release dut.g_core[0].u_core.u_vrf.wr_data;
+        release dut.g_core[1].u_core.u_vrf.wr_en;
+        release dut.g_core[1].u_core.u_vrf.wr_addr;
+        release dut.g_core[1].u_core.u_vrf.wr_data;
+        release dut.g_core[2].u_core.u_vrf.wr_en;
+        release dut.g_core[2].u_core.u_vrf.wr_addr;
+        release dut.g_core[2].u_core.u_vrf.wr_data;
+        release dut.g_core[3].u_core.u_vrf.wr_en;
+        release dut.g_core[3].u_core.u_vrf.wr_addr;
+        release dut.g_core[3].u_core.u_vrf.wr_data;
     endtask
 
     function automatic [VLEN-1:0] read_vreg(input int idx);
-        return dut.u_vrf.vreg[idx];
+        return {
+            dut.g_core[3].u_core.u_vrf.vreg[idx],
+            dut.g_core[2].u_core.u_vrf.vreg[idx],
+            dut.g_core[1].u_core.u_vrf.vreg[idx],
+            dut.g_core[0].u_core.u_vrf.vreg[idx]
+        };
     endfunction
 
     function automatic [VLEN-1:0] make_vec(input int base, input int stride);

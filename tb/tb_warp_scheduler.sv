@@ -9,6 +9,8 @@
 
 module tb_warp_scheduler;
 
+    genvar gi;
+
     parameter int VLEN    = 512;
     parameter int SEW     = 32;
     parameter int N_LANES = 4;
@@ -26,21 +28,32 @@ module tb_warp_scheduler;
     logic [SEW-1:0]     op_scalar;
     logic [VLMAX-1:0]   op_mask;
 
-    // Divergence predictor
+    // Divergence predictor (queried after systolic work; latched for next op)
     wire                dp_query_valid;
+    wire [4:0]        dp_query_op_type;
     wire [N_WARPS-1:0]  dp_skip_pred;
+    logic [N_WARPS-1:0] pred_skip_q;
 
-    // Systolic array
-    wire                sa_clear;
-    wire [N_LANES-1:0]  sa_lane_en;
-    wire signed [SEW-1:0] sa_a_in [N_LANES];
-    wire signed [SEW-1:0] sa_b_in [N_LANES];
-    wire signed [2*SEW-1:0] sa_c_out [N_LANES][N_LANES];
+    // Systolic arrays (one per compute lane / warp tile)
+    wire [N_WARPS-1:0]                sa_clear;
+    wire [N_LANES-1:0]                sa_lane_en [N_WARPS];
+    wire [3:0]                        sa_op_mode;
+    wire                              sa_unit_opt_en;
+    wire signed [SEW-1:0]             sa_a_in [N_WARPS][N_LANES];
+    wire signed [SEW-1:0]             sa_b_in [N_WARPS][N_LANES];
+    wire signed [2*SEW-1:0]           sa_c_out [N_WARPS][N_LANES][N_LANES];
 
     // Writeback
     wire                wb_valid;
     wire [VLEN-1:0]     wb_data;
     logic               wb_ready;
+
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            pred_skip_q <= '0;
+        else if (dp_query_valid)
+            pred_skip_q <= dp_skip_pred;
+    end
 
     // ── Instantiate warp scheduler ──────────────────────────
     warp_scheduler #(
@@ -51,15 +64,32 @@ module tb_warp_scheduler;
         .op_type(op_type), .op_masked(op_masked),
         .op_vs1(op_vs1), .op_vs2(op_vs2), .op_vd_old(op_vd_old),
         .op_scalar(op_scalar), .op_mask(op_mask),
+        .pred_skip_in(pred_skip_q),
         .dp_query_valid(dp_query_valid),
-        .dp_skip_pred(dp_skip_pred),
+        .dp_query_op_type(dp_query_op_type),
         .sa_clear(sa_clear), .sa_lane_en(sa_lane_en),
+        .sa_op_mode(sa_op_mode), .sa_unit_opt_en(sa_unit_opt_en),
         .sa_a_in(sa_a_in), .sa_b_in(sa_b_in), .sa_c_out(sa_c_out),
         .wb_valid(wb_valid), .wb_data(wb_data), .wb_ready(wb_ready)
     );
 
-    // ── Instantiate divergence predictor ────────────────────
-    // Feedback wiring
+    // ── Four systolic meshes (one per warp tile) ────────────
+    generate
+        for (gi = 0; gi < N_WARPS; gi++) begin : g_sa
+            systolic_array #(.N(N_LANES), .DW(SEW)) u_sa (
+                .clk(clk), .rst_n(rst_n),
+                .clear(sa_clear[gi]),
+                .lane_en(sa_lane_en[gi]),
+                .op_mode(sa_op_mode),
+                .unit_opt_en(sa_unit_opt_en),
+                .a_in(sa_a_in[gi]),
+                .b_in(sa_b_in[gi]),
+                .c_out(sa_c_out[gi])
+            );
+        end
+    endgenerate
+
+    // ── Divergence predictor (after systolic arrays) ────────
     reg                 dp_update_valid;
     reg [4:0]           dp_update_op_type;
     reg [N_WARPS-1:0]   dp_update_warp_active;
@@ -69,18 +99,11 @@ module tb_warp_scheduler;
     ) u_dp (
         .clk(clk), .rst_n(rst_n),
         .query_valid(dp_query_valid),
-        .query_op_type(op_type),
+        .query_op_type(dp_query_op_type),
         .pred_skip(dp_skip_pred),
         .update_valid(dp_update_valid),
         .update_op_type(dp_update_op_type),
         .update_warp_active(dp_update_warp_active)
-    );
-
-    // ── Instantiate systolic array (needed for port connection) ─
-    systolic_array #(.N(N_LANES), .DW(SEW)) u_sa (
-        .clk(clk), .rst_n(rst_n),
-        .clear(sa_clear), .lane_en(sa_lane_en),
-        .a_in(sa_a_in), .b_in(sa_b_in), .c_out(sa_c_out)
     );
 
     // Clock

@@ -16,6 +16,8 @@ module systolic_array #(
     input  wire                     rst_n,
     input  wire                     clear,      // zero all accumulators
     input  wire [N-1:0]             lane_en,    // per-lane mask (for masked RVV ops)
+    input  wire [3:0]               op_mode,    // PE op mode (shared across array)
+    input  wire                     unit_opt_en, // enable multiply bypass optimization
 
     // Left-edge inputs  (one per row)
     input  wire signed [DW-1:0]     a_in  [N],
@@ -50,6 +52,8 @@ module systolic_array #(
                     .rst_n  (rst_n),
                     .clear  (clear),
                     .en     (lane_en[r]),        // row-wise lane mask
+                    .op_mode(op_mode),
+                    .unit_opt_en(unit_opt_en),
                     .a_in   (a_wire[r][c]),
                     .b_in   (b_wire[r][c]),
                     .a_out  (a_wire[r][c+1]),

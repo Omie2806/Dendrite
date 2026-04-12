@@ -8,6 +8,7 @@ VLFLAGS   := --binary --trace-fst -Wno-fatal --timing --language 1800-2017
 RTL_SRC := $(RTL_DIR)/pe.sv            \
            $(RTL_DIR)/systolic_array.sv \
            $(RTL_DIR)/vector_regfile.sv \
+           $(RTL_DIR)/dendrite_compute_core.sv \
            $(RTL_DIR)/warp_scheduler.sv \
            $(RTL_DIR)/divergence_predictor.sv \
            $(RTL_DIR)/coprocessor_if.sv \

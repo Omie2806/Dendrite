@@ -9,7 +9,8 @@ module vector_regfile #(
     parameter int VLEN   = 512,
     parameter int NREGS  = 8,
     parameter int SEW    = 32,
-    parameter int VLMAX  = VLEN / SEW     // 16 elements
+    parameter int VLMAX  = VLEN / SEW,    // elements per register
+    parameter int MASK_BITS = VLMAX       // v0.t mask width (lower bits of v0)
 )(
     input  wire                     clk,
     input  wire                     rst_n,
@@ -31,8 +32,8 @@ module vector_regfile #(
     input  wire [$clog2(NREGS)-1:0] wr_addr,
     input  wire [VLEN-1:0]          wr_data,
 
-    // Mask readout — v0 lower VLMAX bits, always available
-    output wire [VLMAX-1:0]         mask_v0
+    // Mask readout — v0 lower MASK_BITS (lane enables), always available
+    output wire [MASK_BITS-1:0]     mask_v0
 );
 
     reg [VLEN-1:0] vreg [NREGS];
@@ -41,7 +42,7 @@ module vector_regfile #(
     assign rs1_data   = vreg[rs1_addr];
     assign rs2_data   = vreg[rs2_addr];
     assign rd_rd_data = vreg[rd_rd_addr];
-    assign mask_v0    = vreg[0][VLMAX-1:0];
+    assign mask_v0    = vreg[0][MASK_BITS-1:0];
 
     // Synchronous write
     always_ff @(posedge clk or negedge rst_n) begin

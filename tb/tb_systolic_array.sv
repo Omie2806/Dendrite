@@ -14,6 +14,8 @@ module tb_systolic_array;
 
     logic               clk, rst_n, clear;
     logic [N-1:0]       lane_en;
+    logic [3:0]         op_mode;
+    logic               unit_opt_en;
     logic signed [DW-1:0] a_in [N];
     logic signed [DW-1:0] b_in [N];
     wire  signed [2*DW-1:0] c_out [N][N];
@@ -44,6 +46,8 @@ module tb_systolic_array;
         rst_n   = 0;
         clear   = 0;
         lane_en = '0;
+        op_mode = 2'd0;      // MAC mode
+        unit_opt_en = 1'b1;  // enable 0/1/-1 multiply bypass
         for (int i = 0; i < N; i++) begin
             a_in[i] = 0;
             b_in[i] = 0;
