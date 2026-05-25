@@ -119,7 +119,7 @@ module tb_dendrite_top;
 
     // ── Direct VRF write (banked VRF inside each compute tile) ─
     localparam int VLEN_BANK = VLEN / 4;
-    task automatic write_vreg(input int idx, input [VLEN-1:0] data);
+    task write_vreg(input int idx, input [VLEN-1:0] data);
         @(posedge clk);
         force dut.g_core[0].u_core.u_vrf.wr_en   = 1;
         force dut.g_core[0].u_core.u_vrf.wr_addr = idx[$clog2(NREGS)-1:0];

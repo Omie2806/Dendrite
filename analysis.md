@@ -36,3 +36,8 @@ hence
   c[1][0]=40  c[1][1]=54  c[1][2]=68  c[1][3]=82
   c[2][0]=50  c[2][1]=68  c[2][2]=86  c[2][3]=104
   c[3][0]=60  c[3][1]=82  c[3][2]=104  c[3][3]=126
+
+why arent the systolic arrays and vrfs directly connected to each other? it seems very complex to route their path through the
+warp scheduler and the coprocessor(this is what claude told me i still cannot trace it)?
+why not connect local systolic arrays and vrfs directly to each other and scheduler warps depending upon the free lanes?
+the coprocessor can directly connect to spike or cva, why route the vrf through it?  
