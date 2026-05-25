@@ -142,6 +142,43 @@ module tb_systolic_array;
             $display("");
         end
 
+        //test 6: 4x4 matrix multiplication
+        clear = 1;
+        @(posedge clk); #1;
+        clear = 0;
+
+        a_in[0] = 1;        
+        b_in[0] = 1;
+        @(posedge clk); #1;
+        a_in[0] = 2; a_in[1] = 2;
+        b_in[0] = 2; b_in[1] = 2;
+        @(posedge clk);
+        a_in[0] = 3; a_in[1] = 3; a_in[2] = 3;
+        b_in[0] = 3; b_in[1] = 3; b_in[2] = 3;
+        @(posedge clk);
+        a_in[0] = 4; a_in[1] = 4; a_in[2] = 4; a_in[3] = 4;
+        b_in[0] = 4; b_in[1] = 4; b_in[2] = 4; b_in[3] = 4;
+        @(posedge clk);
+        a_in[0] = 0; a_in[1] = 5; a_in[2] = 5; a_in[3] = 5;
+        b_in[0] = 0; b_in[1] = 5; b_in[2] = 5; b_in[3] = 5;
+        @(posedge clk);
+        a_in[0] = 0; a_in[1] = 0; a_in[2] = 6; a_in[3] = 6;
+        b_in[0] = 0; b_in[1] = 0; b_in[2] = 6; b_in[3] = 6;   
+        @(posedge clk);
+        a_in[0] = 0; a_in[1] = 0; a_in[2] = 0; a_in[3] = 7;
+        b_in[0] = 0; b_in[1] = 0; b_in[2] = 0; b_in[3] = 7;    
+        @(posedge clk); 
+        a_in[0] = 0; a_in[1] = 0; a_in[2] = 0; a_in[3] = 0;
+        b_in[0] = 0; b_in[1] = 0; b_in[2] = 0; b_in[3] = 0;  
+        repeat(N) @(posedge clk); #1;
+
+        $display("After single feed + propagation:");
+        for (int r = 0; r < N; r++) begin
+            for (int c = 0; c < N; c++)
+                $write("  c[%0d][%0d]=%0d", r, c, c_out[r][c]);
+            $display("");
+        end
+
         // ── Test 4: Accumulate — clear and do 2 rounds ──────
         clear = 1;
         @(posedge clk); #1;
