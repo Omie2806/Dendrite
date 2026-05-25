@@ -63,8 +63,8 @@ module tb_systolic_array;
         for (int r = 0; r < N; r++)
             for (int c = 0; c < N; c++)
                 check($sformatf("clear[%0d][%0d]", r, c), c_out[r][c], 0);
-
-        // ── Test 2: Single MAC ──────────────────────────────
+                
+          // ── Test 2: Single MAC ──────────────────────────────
         // Feed A = [1,2,3,4], B = [5,6,7,8] with all lanes enabled
         // After 1 cycle, only PE[0][0] sees a_in[0]*b_in[0] = 1*5 = 5
         // (other PEs get data in subsequent cycles due to systolic delay)
@@ -98,7 +98,51 @@ module tb_systolic_array;
             $display("");
         end
 
-        // ── Test 3: Accumulate — clear and do 2 rounds ──────
+        // ── Test 3: 2x2 Matrix mul ──────────────────────────────
+        // Feed A = [[1, 2, 3, 4],[1, 2, 3, 4]] B = [[5, 6, 7, 8],[5, 6, 7, 8]] with all lanes enabled
+        // (other PEs get data in subsequent cycles due to systolic delay)
+        clear = 1;
+        @(posedge clk); #1;
+        clear = 0;
+        @(posedge clk); #1;
+        
+        lane_en = 4'hF;
+        a_in[0] = 1; 
+        b_in[0] = 5; 
+        @(posedge clk); #1;       
+        a_in[0] = 2; a_in[1] = 1;
+        b_in[0] = 6; b_in[1] = 5;
+        @(posedge clk); #1;       
+        a_in[0] = 3; a_in[1] = 2;
+        b_in[0] = 7; b_in[1] = 6;
+        @(posedge clk); #1;                
+        a_in[0] = 4; a_in[1] = 3;                   
+        b_in[0] = 8; b_in[1] = 7;
+        @(posedge clk); #1;
+        a_in[0] = 0; a_in[1] = 4;
+        b_in[0] = 0; b_in[1] = 8;
+        @(posedge clk); #1;              
+        // Zero inputs for remaining cycles
+        for (int i = 0; i < N; i++) begin
+            a_in[i] = 0;
+            b_in[i] = 0;
+        end
+
+        // cehck for the final 2x2 output
+        check("mac[0][0]", c_out[0][0], 64'd70);
+    
+        // Wait for data to ripple through
+        @(posedge clk); #1;
+        repeat(N) @(posedge clk); #1;
+
+        $display("After single feed + propagation:");
+        for (int r = 0; r < N; r++) begin
+            for (int c = 0; c < N; c++)
+                $write("  c[%0d][%0d]=%0d", r, c, c_out[r][c]);
+            $display("");
+        end
+
+        // ── Test 4: Accumulate — clear and do 2 rounds ──────
         clear = 1;
         @(posedge clk); #1;
         clear = 0;
@@ -121,7 +165,7 @@ module tb_systolic_array;
 
         a_in[0] = 0; b_in[0] = 0;
 
-        // ── Test 4: Lane masking ────────────────────────────
+        // ── Test 5: Lane masking ────────────────────────────
         // Test on edge PEs only (c_out[r][0]) — need to wait r cycles
         // for data to reach PE[r][0] via b propagation.
         // Instead, test lane_en on row 0 (PE[0][c]) using different b_in values.
