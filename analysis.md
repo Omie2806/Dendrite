@@ -41,3 +41,33 @@ why arent the systolic arrays and vrfs directly connected to each other? it seem
 warp scheduler and the coprocessor(this is what claude told me i still cannot trace it)?
 why not connect local systolic arrays and vrfs directly to each other and scheduler warps depending upon the free lanes?
 the coprocessor can directly connect to spike or cva, why route the vrf through it?  
+
+traced the vrf and systolic array connections through the coprocesssor and the warp scheduler, ig the ai got confused with
+warp scheduler being the "central unit" and actually mappped everything to it
+
+ 
+
+The write port has to 64 bits wide for write back purposes (its 32 bits for now but lets see)
+
+so what i understood today:
+
+first of all the coprocessor is mostly like an instruction decoder which interfaces with spike/cva6
+theres no need for it to read the vrf at all, only decode the instructions and write the scalars
+in the vrf
+
+the same applies to the warp scheduler, it only has to track every core's status and issue a warp when a
+core gets freed. No need for it to issue the data to the sys_arrays.
+infact the warp scheduling here is much simpler cause there are no sudden stalls like we encounter in SIMDs
+
+i traced and tried to understand how can i optimize this approach,by remove the vrf's data transfers between the coprocessor 
+and the warp scheduler
+
+ill also look into the divergence predictor later cause idt its that important.
+
+So what ill do is,
+
+first connect the vrf banks and the sys_arrays together directly and test them with all possible rvv ops(i want to fimiliarize
+myself with rvv ops thats why)
+
+then instantiate multiple cores(4) and test their behavior with the vrf so what no bank conflict occurs 
+
