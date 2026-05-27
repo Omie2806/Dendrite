@@ -66,7 +66,7 @@ ill also look into the divergence predictor later cause idt its that important.
 
 So what ill do is,
 
-first connect the vrf banks and the sys_arrays together directly and test them with all possible rvv ops(i want to fimiliarize
+first connect the vrf banks and the sys_arrays together directly and test them with all possible rvv ops(i want to familiarize
 myself with rvv ops thats why)
 
 then instantiate multiple cores(4) and test their behavior with the vrf so what no bank conflict occurs 
